@@ -7,7 +7,7 @@ from scipy import signal
 import matplotlib.pyplot as plt
 
 
-# Reading input data
+# Reading and labeling input data
 # 1) Read sound files
 # 2) Add label to read sound files as tuple (sound, label) for each file: 0 for car, 1 for bus
 
