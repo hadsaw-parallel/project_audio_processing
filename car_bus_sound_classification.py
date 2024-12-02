@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 # Reading input data
 # 1) Read sound files
-# 2) Add label to read sound files as tuple (sound, label) for each file
+# 2) Add label to read sound files as tuple (sound, label) for each file: 0 for car, 1 for bus
 
 
 
