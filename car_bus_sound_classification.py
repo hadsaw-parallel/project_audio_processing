@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 
 # Reading and labeling input data
 # 1) Read sound files
-# 2) Add label to read sound files as tuple (sound, label) for each file: 0 for car, 1 for bus
+# 2) Add label to read sound files as tuple (sound, fs, label) for each file: 0 for car, 1 for bus
+car = [] # [(sound, fs, label)]
+bus = [] # [(sound, fs, label)]
 
 
 
@@ -19,7 +21,11 @@ import matplotlib.pyplot as plt
 # 2.1) Mel Spectrogram
 # 2.2) MFCC
 # 2.3) Energy: RMS
-# 2.4) Zero-crossing rate
+# 2.4) Zero-crossing rate (zcr)
+# output example: [mel spectrogram, MFCC, RMS, zcr]
+car_features = []
+bus_features = []
+
 
 
 
