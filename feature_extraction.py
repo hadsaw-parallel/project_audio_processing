@@ -49,7 +49,7 @@ def extract_feature(audios, Fs, audio_length, n_fft, win_size, hop_size, n_mels,
             feature["rms"] = rms
             feature["zcr"] = zcr
 
-            features.append(feature)
+            features.append((feature, label))
 
     
     return features

@@ -11,7 +11,7 @@ from feature_extraction import *
 
 # Reading and labeling input data
 # 1) Read sound files
-# 2) Add label to read sound files as tuple (sound, fs, label) for each file: 0 for car, 1 for bus
+# 2) Add label to read sound files as tuple (sound, fs, label) for each file: 1 for car, 0 for bus
 car = [] # [(sound, fs, label)]
 bus = [] # [(sound, fs, label)]
 
@@ -49,7 +49,7 @@ print(f'Finish reading {len(car)} car audios  and {len(bus)} bus audios.\n')
 # 3.2) MFCC
 # 3.3) Energy: RMS
 # 3.4) Zero-crossing rate (zcr)
-# output example: list[ dict(mel spectrogram, MFCC, RMS, zcr), ...]
+# output example: list[ (dict(mel spectrogram, MFCC, RMS, zcr), label), ...]
 Fs = 44100
 L = Fs*5
 n_fft = 2048
@@ -62,7 +62,7 @@ bus_features = extract_feature(audios=bus, Fs=Fs, audio_length=L, n_fft=n_fft, w
 
 print("Feature extraction done.")
 print(f'Usable car audios: {len(car_features)}. Usable bus audios: {len(bus_features)}')
-print(f'car_features[0] ->', car_features[0].keys(), "\n")
+print(f'car_features[0] ->', car_features[0][0].keys(),  f', label={car_features[0][1]}', "\n")
 
 
 
