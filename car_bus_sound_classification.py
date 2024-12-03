@@ -42,12 +42,13 @@ print(f'Finish reading {len(car)} car audios  and {len(bus)} bus audios.\n')
 
 
 # Preprocessing
-# 1) Normalize the dataset
-# 2) Feature extractions:
-# 2.1) Mel Spectrogram
-# 2.2) MFCC
-# 2.3) Energy: RMS
-# 2.4) Zero-crossing rate (zcr)
+# 1) Resample the audio signal to a fixed sampling rate
+# 2) Normalize the dataset
+# 3) Feature extractions:
+# 3.1) Mel Spectrogram
+# 3.2) MFCC
+# 3.3) Energy: RMS
+# 3.4) Zero-crossing rate (zcr)
 # output example: list[ dict(mel spectrogram, MFCC, RMS, zcr), ...]
 Fs = 44100
 L = Fs*5
