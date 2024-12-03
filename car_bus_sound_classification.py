@@ -9,9 +9,10 @@ import os
 from feature_extraction import *
 
 
-# Reading and labeling input data
+# ----------------------------------Reading and labeling input data------------------------------------
 # 1) Read sound files
 # 2) Add label to read sound files as tuple (sound, fs, label) for each file: 1 for car, 0 for bus
+# -----------------------------------------------------------------------------------------------------
 car = [] # [(sound, fs, label)]
 bus = [] # [(sound, fs, label)]
 
@@ -41,7 +42,7 @@ for filename in os.listdir(bus_dir):
 print(f'Finish reading {len(car)} car audios  and {len(bus)} bus audios.\n')
 
 
-# Preprocessing
+# ---------------------------------------Preprocessing -------------------------------------
 # 1) Resample the audio signal to a fixed sampling rate
 # 2) Normalize the dataset
 # 3) Feature extractions:
@@ -50,6 +51,7 @@ print(f'Finish reading {len(car)} car audios  and {len(bus)} bus audios.\n')
 # 3.3) Energy: RMS
 # 3.4) Zero-crossing rate (zcr)
 # output example: list[ (dict(mel spectrogram, MFCC, RMS, zcr), label), ...]
+# -------------------------------------------------------------------------------------------
 Fs = 44100
 L = Fs*5
 n_fft = 2048
@@ -67,11 +69,11 @@ print(f'car_features[0] ->', car_features[0][0].keys(),  f', label={car_features
 
 
 
-
-# Split the dataset into train, validation, and test data
+# ---------------------------Split the dataset into train, validation, and test data-----------------------
 # 1) Train dataset
 # 2) Validation dataset
 # 3) Test dataset
+# ---------------------------------------------------------------------------------------------------------
 
 
 
