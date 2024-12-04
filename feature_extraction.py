@@ -18,12 +18,17 @@ def extract_feature(audios, Fs, audio_length, n_fft, win_size, hop_size, n_mels,
             if len(audio) != audio_length:
                 audio = audio[:audio_length]
 
-            # 1) Normalize audio to the range [0, 1]
-            min = np.min(audio)
-            max = np.max(audio)
-            audio = 2*((audio - min) / (max - min)) - 1
+            # Add checks for valid audio data
+            if len(audio) == 0 or np.any(np.isnan(audio)) or np.any(np.isinf(audio)):
+                print(f"Skipping invalid audio sample")
+                continue
             
-
+            # Safer normalization
+            if np.max(audio) != np.min(audio):
+                audio = 2 * ((audio - np.min(audio)) / (np.max(audio) - np.min(audio))) - 1
+            else:
+                audio = np.zeros_like(audio)
+            
             # 2.1) Mel spectrogram in log scale
             mel_spectro = lb.feature.melspectrogram(
                 y=audio, sr=Fs, n_fft=n_fft, n_mels=n_mels, 
