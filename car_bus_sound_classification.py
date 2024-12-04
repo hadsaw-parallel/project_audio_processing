@@ -9,7 +9,7 @@ import os
 from feature_extraction import *
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, precision_score, recall_score
 from sklearn.ensemble import RandomForestClassifier
 
 
@@ -104,6 +104,7 @@ print(f'train_car_features[0] ->', train_car_features[0][0].keys(), f', label={t
 train_features = train_car_features + train_bus_features
 val_features = val_car_features + val_bus_features
 test_features = test_car_features + test_bus_features
+
 
 # Prepare training data with error handling and debugging
 X_train = []
@@ -240,14 +241,23 @@ print(classification_report(y_test, test_predictions,
 print("#"*100)
 
 
-def plot_learning_curves(model, X_train, y_train, X_val, y_val, X_test, y_test):
+def plot_learning_curves(model, X_train, y_train, X_val, y_val, X_test, y_test, model_name=""):
     """
     Plot learning curves for training, validation, and test sets
     """
-    train_scores = []
-    val_scores = []
-    test_scores = []
     train_sizes = np.linspace(0.1, 1.0, 10)
+
+    train_scores_acc = []
+    val_scores_acc = []
+    test_scores_acc = []
+
+    train_scores_precision = []
+    val_scores_precision = []
+    test_scores_precision = []
+
+    train_scores_recall = []
+    val_scores_recall = []
+    test_scores_recall = []
     
     # Get indices for each class
     class_0_idx = np.where(y_train == 0)[0]
@@ -271,26 +281,70 @@ def plot_learning_curves(model, X_train, y_train, X_val, y_val, X_test, y_test):
             # Train model on subset
             model.fit(X_train_subset, y_train_subset)
             
+            # Get predictions
+            predictions_train = model.predict(X_train_subset)
+            predictions_val = model.predict(X_val)
+            predictions_test = model.predict(X_test)
+
             # Calculate scores
-            train_scores.append(accuracy_score(y_train_subset, model.predict(X_train_subset)))
-            val_scores.append(accuracy_score(y_val, model.predict(X_val)))
-            test_scores.append(accuracy_score(y_test, model.predict(X_test)))
+            train_scores_acc.append(accuracy_score(y_train_subset, predictions_train))
+            val_scores_acc.append(accuracy_score(y_val, predictions_val))
+            test_scores_acc.append(accuracy_score(y_test, predictions_test))
+
+            train_scores_precision.append(precision_score(y_train_subset, predictions_train, zero_division=0))
+            val_scores_precision.append(precision_score(y_val, predictions_val, zero_division=0))
+            test_scores_precision.append(precision_score(y_test, predictions_test, zero_division=0))
+
+            train_scores_recall.append(recall_score(y_train_subset, predictions_train, zero_division=0))
+            val_scores_recall.append(recall_score(y_val, predictions_val, zero_division=0))
+            test_scores_recall.append(recall_score(y_test, predictions_test, zero_division=0))
         except Exception as e:
             print(f"Error at size {size}: {str(e)}")
             continue
     
+    x_values = train_sizes * 100
+
     # Create plot
-    plt.figure(figsize=(10, 6))
-    plt.plot(train_sizes * 100, train_scores, label='Training', marker='o')
-    plt.plot(train_sizes * 100, val_scores, label='Validation', marker='s')
-    plt.plot(train_sizes * 100, test_scores, label='Test', marker='^')
+    #plt.figure(figsize=(10, 6))
+    #plt.plot(x_values, train_scores_acc, label='Training', marker='o')
+    #plt.plot(x_values, val_scores_acc, label='Validation', marker='s')
+    #plt.plot(x_values, test_scores_acc, label='Test', marker='^')
     
-    plt.xlabel('Percentage of Training Data')
-    plt.ylabel('Accuracy Score')
-    plt.title('Learning Curves')
-    plt.legend()
-    plt.grid(True)
+    #plt.xlabel('Percentage of Training Data')
+    #plt.ylabel('Accuracy Score')
+    #plt.title(f'Learning Curves of {model_name}')
+    #plt.legend()
+    #plt.grid(True)
+    #plt.savefig(f'accuracy_{"_".join(model_name.split(" "))}.png')
+    #plt.show()
+
+    fig, ax = plt.subplots(3, figsize=(10, 8))
+    ax[0].plot(x_values, train_scores_acc, label='Training', marker='o')
+    ax[0].plot(x_values, val_scores_acc, label='Validation', marker='s')
+    ax[0].plot(x_values, test_scores_acc, label='Test', marker='^')
+    #ax[0].set_xlabel('Percentage of Training Data')
+    ax[0].set_ylabel('Accuracy Score')
+    ax[0].set_title(f'Learning Curves of {model_name}')
+    ax[0].legend(fancybox=True, framealpha=0.5)
+    ax[0].grid(True)
+    ax[1].plot(x_values, train_scores_precision, label='Training', marker='o')
+    ax[1].plot(x_values, val_scores_precision, label='Validation', marker='s')
+    ax[1].plot(x_values, test_scores_precision, label='Test', marker='^')
+    #ax[1].set_xlabel('Percentage of Training Data')
+    ax[1].set_ylabel('Precision Score')
+    ax[1].legend(fancybox=True, framealpha=0.5)
+    ax[1].grid(True)
+    ax[2].plot(x_values, train_scores_recall, label='Training', marker='o')
+    ax[2].plot(x_values, val_scores_recall, label='Validation', marker='s')
+    ax[2].plot(x_values, test_scores_recall, label='Test', marker='^')
+    ax[2].set_xlabel('Percentage of Training Data')
+    ax[2].set_ylabel('Recall Score')
+    ax[2].legend(fancybox=True, framealpha=0.5)
+    ax[2].grid(True)
+    fig.tight_layout()
+    plt.savefig(f'{"_".join(model_name.lower().split(" "))}.png')
     plt.show()
+
 
 # Plot learning curves for SVM model
 print("\nPlotting Learning Curves for SVM Model:")
@@ -298,7 +352,8 @@ plot_learning_curves(
     SVC(kernel='rbf', C=1.0, gamma='scale', class_weight='balanced', random_state=42),
     X_train_scaled, y_train,
     X_val_scaled, y_val,
-    X_test_scaled, y_test
+    X_test_scaled, y_test,
+    model_name="Support Vector Machine"
 )
 
 # Plot learning curves for Random Forest model
@@ -307,10 +362,6 @@ plot_learning_curves(
     RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42),
     X_train_scaled, y_train,
     X_val_scaled, y_val,
-    X_test_scaled, y_test
+    X_test_scaled, y_test,
+    model_name="Random Forest Classifier"
 )
-
-
-
-
-
