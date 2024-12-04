@@ -66,6 +66,50 @@ print("Feature extraction done.")
 print(f'Usable car audios: {len(car_features)}. Usable bus audios: {len(bus_features)}')
 print(f'car_features[0] ->', car_features[0][0].keys(),  f', label={car_features[0][1]}', "\n")
 
+# Combine car and bus features into one dataset
+all_features = car_features + bus_features
+
+# Separate features and labels
+X = np.array([np.concatenate([v.flatten() if isinstance(v, np.ndarray) else [v] 
+              for v in features[0].values()]) for features in all_features])
+y = np.array([label for _, label in all_features])
+
+# Split the dataset into train, validation, and test sets (60-20-20 split)
+from sklearn.model_selection import train_test_split
+
+X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.25, random_state=42)
+
+# Train SVM model
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, precision_score, recall_score, classification_report
+
+# Scale the features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_val_scaled = scaler.transform(X_val)
+X_test_scaled = scaler.transform(X_test)
+
+# Create and train SVM model
+svm_model = SVC(kernel='rbf', random_state=42)
+svm_model.fit(X_train_scaled, y_train)
+
+# Make predictions
+y_pred = svm_model.predict(X_test_scaled)
+
+# Calculate metrics
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+
+print("Model Performance Metrics:")
+print(f"Accuracy: {accuracy:.4f}")
+print(f"Precision: {precision:.4f}")
+print(f"Recall: {recall:.4f}")
+print("\nDetailed Classification Report:")
+print(classification_report(y_test, y_pred, target_names=['Bus', 'Car']))
+
 
 
 

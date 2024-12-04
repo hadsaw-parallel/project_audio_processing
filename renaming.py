@@ -8,18 +8,23 @@ def rename_files(directory):
         directory (str): Path to the directory containing files
     """
     try:
-        for filename in os.listdir(directory):
-            if filename.endswith('.wav'):
-                # Remove numbers and 'nhandnguyen' from filename
-                new_filename = re.sub(r'\d+__nhandnguyen__car_', '', filename)
-                
-                # Create full file paths
-                old_file = os.path.join(directory, filename)
-                new_file = os.path.join(directory, new_filename)
-                
-                # Rename the file
-                os.rename(old_file, new_file)
-                print(f"Renamed: {filename} → {new_filename}")
+        count = 1
+        # Sort the filenames numerically
+        filenames = sorted([f for f in os.listdir(directory) if f.endswith('.wav')], 
+                         key=lambda x: int(re.search(r'^\d+', x).group()))
+        
+        for filename in filenames:
+            # Create simple numbered filename
+            new_filename = f"{count}.wav"
+            count += 1
+            
+            # Create full file paths
+            old_file = os.path.join(directory, filename)
+            new_file = os.path.join(directory, new_filename)
+            
+            # Rename the file
+            os.rename(old_file, new_file)
+            print(f"Renamed: {filename} → {new_filename}")
     
     except Exception as e:
         print(f"An error occurred: {e}")
