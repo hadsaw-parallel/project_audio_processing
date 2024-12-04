@@ -240,6 +240,77 @@ print(classification_report(y_test, test_predictions,
 print("#"*100)
 
 
+def plot_learning_curves(model, X_train, y_train, X_val, y_val, X_test, y_test):
+    """
+    Plot learning curves for training, validation, and test sets
+    """
+    train_scores = []
+    val_scores = []
+    test_scores = []
+    train_sizes = np.linspace(0.1, 1.0, 10)
+    
+    # Get indices for each class
+    class_0_idx = np.where(y_train == 0)[0]
+    class_1_idx = np.where(y_train == 1)[0]
+    
+    for size in train_sizes:
+        try:
+            # Calculate how many samples we need from each class
+            n_samples = int(len(X_train) * size)
+            n_samples_per_class = n_samples // 2
+            
+            # Get balanced subset of indices
+            subset_0_idx = np.random.choice(class_0_idx, n_samples_per_class, replace=False)
+            subset_1_idx = np.random.choice(class_1_idx, n_samples_per_class, replace=False)
+            subset_idx = np.concatenate([subset_0_idx, subset_1_idx])
+            
+            # Create balanced subset
+            X_train_subset = X_train[subset_idx]
+            y_train_subset = y_train[subset_idx]
+            
+            # Train model on subset
+            model.fit(X_train_subset, y_train_subset)
+            
+            # Calculate scores
+            train_scores.append(accuracy_score(y_train_subset, model.predict(X_train_subset)))
+            val_scores.append(accuracy_score(y_val, model.predict(X_val)))
+            test_scores.append(accuracy_score(y_test, model.predict(X_test)))
+        except Exception as e:
+            print(f"Error at size {size}: {str(e)}")
+            continue
+    
+    # Create plot
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_sizes * 100, train_scores, label='Training', marker='o')
+    plt.plot(train_sizes * 100, val_scores, label='Validation', marker='s')
+    plt.plot(train_sizes * 100, test_scores, label='Test', marker='^')
+    
+    plt.xlabel('Percentage of Training Data')
+    plt.ylabel('Accuracy Score')
+    plt.title('Learning Curves')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+# Plot learning curves for SVM model
+print("\nPlotting Learning Curves for SVM Model:")
+plot_learning_curves(
+    SVC(kernel='rbf', C=1.0, gamma='scale', class_weight='balanced', random_state=42),
+    X_train_scaled, y_train,
+    X_val_scaled, y_val,
+    X_test_scaled, y_test
+)
+
+# Plot learning curves for Random Forest model
+print("\nPlotting Learning Curves for Random Forest Model:")
+plot_learning_curves(
+    RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42),
+    X_train_scaled, y_train,
+    X_val_scaled, y_val,
+    X_test_scaled, y_test
+)
+
+
 
 
 
