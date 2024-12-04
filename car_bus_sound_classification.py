@@ -95,7 +95,9 @@ test_car_features = extract_feature(audios=test_car, Fs=Fs, audio_length=L, n_ff
 test_bus_features = extract_feature(audios=test_bus, Fs=Fs, audio_length=L, n_fft=n_fft, win_size=win_size, hop_size=hop_size, n_mels=n_mels)
 
 print("Feature extraction done.")
-print(f'Usable car audios: {len(train_car_features)}. Usable bus audios: {len(train_bus_features)}')
+print(f'Train data: usable car audios: {len(train_car_features)}, usable bus audios: {len(train_bus_features)}')
+print(f'Validation data: usable car audios: {len(val_car_features)}, usable bus audios: {len(val_bus_features)}')
+print(f'Test data: usable car audios: {len(test_car_features)}, usable bus audios: {len(test_bus_features)}')
 print(f'train_car_features[0] ->', train_car_features[0][0].keys(), f', label={train_car_features[0][1]}', "\n")
 
 # Combine features for each dataset separately
@@ -158,12 +160,15 @@ for features in test_features:
     X_test.append(np.pad(concatenated_vector, (0, max_length - len(concatenated_vector)), 'constant'))
 X_test = np.array(X_test)
 
+
 # Scale the features
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_val_scaled = scaler.transform(X_val)
 X_test_scaled = scaler.transform(X_test)
 
+
+print("#"*20, "Support Vector Machine model", "#"*20)
 # Create and train SVM model
 svm_model = SVC(
     kernel='rbf',  # Try 'linear', 'poly', or 'sigmoid'
@@ -178,7 +183,7 @@ svm_model.fit(X_train_scaled, y_train)
 val_predictions = svm_model.predict(X_val_scaled)
 val_accuracy = accuracy_score(y_val, val_predictions)
 print("\nValidation Set Performance:")
-print(f"Validation Accuracy: {val_accuracy:.4f}")
+print(f"Validation Accuracy: {val_accuracy:.4f} or {val_accuracy*100:.2f}%")
 print("\nValidation Classification Report:")
 print(classification_report(y_val, val_predictions, 
                           target_names=['Bus', 'Car'],
@@ -188,11 +193,13 @@ print(classification_report(y_val, val_predictions,
 test_predictions = svm_model.predict(X_test_scaled)
 test_accuracy = accuracy_score(y_test, test_predictions)
 print("\nTest Set Performance:")
-print(f"Test Accuracy: {test_accuracy:.4f}")
+print(f"Test Accuracy: {test_accuracy:.4f} or {test_accuracy*100:.2f}%")
 print("\nTest Classification Report:")
 print(classification_report(y_test, test_predictions, 
                           target_names=['Bus', 'Car'],
                           zero_division=0))
+print("#"*100)
+
 
 # Also, let's add some diagnostic information
 print("\nData Distribution:")
@@ -200,6 +207,9 @@ print(f"Training set - Bus: {sum(y_train == 0)}, Car: {sum(y_train == 1)}")
 print(f"Validation set - Bus: {sum(y_val == 0)}, Car: {sum(y_val == 1)}")
 print(f"Test set - Bus: {sum(y_test == 0)}, Car: {sum(y_test == 1)}")
 
+
+print()
+print("#"*20, "Random Forest model", "#"*20)
 # Or try other classifiers
 rf_model = RandomForestClassifier(
     n_estimators=100,
@@ -212,7 +222,7 @@ rf_model.fit(X_train_scaled, y_train)
 val_predictions = rf_model.predict(X_val_scaled)
 val_accuracy = accuracy_score(y_val, val_predictions)
 print("\nValidation Set Performance:")
-print(f"Validation Accuracy: {val_accuracy:.4f}")
+print(f"Validation Accuracy: {val_accuracy:.4f} or {val_accuracy*100:.2f}%")
 print("\nValidation Classification Report:")
 print(classification_report(y_val, val_predictions, 
                           target_names=['Bus', 'Car'],
@@ -222,8 +232,14 @@ print(classification_report(y_val, val_predictions,
 test_predictions = rf_model.predict(X_test_scaled)
 test_accuracy = accuracy_score(y_test, test_predictions)
 print("\nTest Set Performance:")
-print(f"Test Accuracy: {test_accuracy:.4f}")
+print(f"Test Accuracy: {test_accuracy:.4f} or {test_accuracy*100:.2f}%")
 print("\nTest Classification Report:")
 print(classification_report(y_test, test_predictions, 
                           target_names=['Bus', 'Car'],
                           zero_division=0))
+print("#"*100)
+
+
+
+
+
