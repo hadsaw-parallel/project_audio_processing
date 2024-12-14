@@ -6,11 +6,12 @@ from scipy.fftpack import fft, ifft, dct
 from scipy import signal
 import matplotlib.pyplot as plt
 import os
-from feature_extraction import *
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report, precision_score, recall_score
 from sklearn.ensemble import RandomForestClassifier
+import seaborn as sns
+import pandas as pd
 
 
 # ----------------------------------Reading and labeling input data------------------------------------
@@ -64,7 +65,63 @@ test_car_dir = "dataset/car-sounds/testing"
 test_bus_dir = "dataset/bus-sounds/testing"
 test_car, test_bus = load_audio_files(test_car_dir, test_bus_dir)
 
+def extract_feature(audios, Fs, audio_length, n_fft, win_size, hop_size, n_mels, window_name="hamming"):
+    features = []
+    for i in range(len(audios)):
+        feature = dict()
+        audio, fs, label = audios[i]
+        
+        # Check if audio is a 1d array
+        if (audio.ndim != 1):
+            audio = np.mean(audio, axis=1)
 
+        # Resample the audio to a fixed sampling rate Fs
+        if fs != Fs:
+            audio = lb.resample(audio, orig_sr=fs, target_sr=Fs)
+        
+        # Trim the audio to a fixed length of 5 seconds
+        if len(audio) != audio_length:
+            audio = audio[:audio_length]
+
+        # Add checks for valid audio data
+        if len(audio) == 0 or np.any(np.isnan(audio)) or np.any(np.isinf(audio)):
+            print(f"Skipping invalid audio sample")
+            continue
+        
+        # Safer normalization
+        if np.max(audio) != np.min(audio):
+            audio = 2 * ((audio - np.min(audio)) / (np.max(audio) - np.min(audio))) - 1
+        else:
+            audio = np.zeros_like(audio)
+        
+        # 2.1) Mel spectrogram in log scale
+        mel_spectro = lb.feature.melspectrogram(
+            y=audio, sr=Fs, n_fft=n_fft, n_mels=n_mels, 
+            win_length=win_size, window=window_name, hop_length=hop_size)
+        
+        mel_spectro_db = lb.power_to_db(mel_spectro, ref=np.max)
+
+        # 2.2) MFCC
+        #mfcc = lb.feature.mfcc(
+        #    y=audio, sr=Fs, n_mfcc=n_mels, n_mels=n_mels, n_fft=n_fft, 
+        #    win_length=win_size, window="hamming", hop_length=hop_size)
+        mfcc = dct(mel_spectro_db, axis=0)
+        
+        # 2.3) RMS
+        rms = lb.feature.rms(y=audio, frame_length=audio_length//hop_size, hop_length=hop_size)
+        
+        # 2.4) zcr
+        zcr = lb.feature.zero_crossing_rate(y=audio, frame_length=audio_length//hop_size, hop_length=hop_size)
+
+        # Append the features to car_features
+        feature["mel"] = mel_spectro_db
+        feature["mfcc"] = mfcc
+        feature["rms"] = rms
+        feature["zcr"] = zcr
+
+        features.append((feature, label))
+    
+    return features
 # ---------------------------------------Preprocessing -------------------------------------
 # 1) Resample the audio signal to a fixed sampling rate
 # 2) Normalize the dataset
@@ -365,3 +422,64 @@ plot_learning_curves(
     X_test_scaled, y_test,
     model_name="Random Forest Classifier"
 )
+
+def create_feature_plots(X_train, y_train, feature_indices, feature_names):
+    """
+    Create distribution plots, boxplots, and pair plots for audio features
+    """
+    # Select specific features to plot
+    selected_features = X_train[:, feature_indices]
+    df = pd.DataFrame(selected_features, columns=feature_names)
+    df['Label'] = ['Car' if label == 1 else 'Bus' for label in y_train]
+    
+    # 1. Feature Distribution Plots
+    plt.figure(figsize=(15, 10))
+    for idx, feature in enumerate(feature_names, 1):
+        plt.subplot(2, 2, idx)
+        sns.histplot(data=df, x=feature, hue='Label', kde=True)
+        plt.title(f'Distribution of {feature}', fontsize=12, pad=10)
+        plt.xlabel(f'{feature} Value', fontsize=10)
+        plt.ylabel('Frequency', fontsize=10)
+    plt.suptitle('Feature Distributions for Car and Bus Audio Classification', fontsize=14, y=1.02)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout
+    plt.savefig('feature_distributions.png', bbox_inches='tight', dpi=300)
+    plt.show()
+    
+    # 2. Box Plots
+    plt.figure(figsize=(15, 10))
+    for idx, feature in enumerate(feature_names, 1):
+        plt.subplot(2, 2, idx)
+        sns.boxplot(x='Label', y=feature, data=df)
+        plt.title(f'Boxplot of {feature}', fontsize=12, pad=10)
+        plt.xlabel('Vehicle Type', fontsize=10)
+        plt.ylabel(f'{feature} Value', fontsize=10)
+    plt.suptitle('Feature Boxplots for Car and Bus Audio Classification', fontsize=14, y=1.02)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout
+    plt.savefig('feature_boxplots.png', bbox_inches='tight', dpi=300)
+    plt.show()
+    
+    # 3. Pair Plot
+    pair_plot = sns.pairplot(df, hue='Label', diag_kind='kde')
+    pair_plot.fig.suptitle('Feature Relationships in Car and Bus Audio Classification', 
+                          fontsize=14, y=1.02)
+    plt.subplots_adjust(top=0.9)  # Adjust layout
+    plt.savefig('feature_pairplot.png', bbox_inches='tight', dpi=300)
+    plt.show()
+
+# Define actual feature names based on audio characteristics
+feature_names = ['MFCC (Mel Frequency Cepstral Coefficients)', 
+                'Mel Spectrogram Energy',
+                'RMS Energy',
+                'Zero Crossing Rate']
+
+# Call the function with the first 4 features
+create_feature_plots(X_train_scaled, y_train, list(range(4)), feature_names)
+
+# Create DataFrame with features for statistics
+selected_features = X_train_scaled[:, :4]  # First 4 features
+df = pd.DataFrame(selected_features, columns=['MFCC', 'Mel Spectrogram', 'RMS', 'ZCR'])
+df['Label'] = ['Car' if label == 1 else 'Bus' for label in y_train]
+
+print("\nFeature Statistics:")
+df_stats = df.groupby('Label').describe()
+print(df_stats)
